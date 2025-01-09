@@ -1,5 +1,5 @@
 #%% initiate scanner object
-from device_driver import *
+from device_driver import Scanner
 # only run when starting VSC, when error: micromanager was not ready yet, restart VSC
 scanner = Scanner()
 # scanner.magnif = 20 # if not stated, 10X is default (0.64um/pixel)

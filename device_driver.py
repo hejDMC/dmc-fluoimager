@@ -9,7 +9,6 @@ from stitching_tools import *
 import os
 import cv2
 import matplotlib.pyplot as plt
-from skimage.exposure import rescale_intensity
 from roi_tools import *
 
 
