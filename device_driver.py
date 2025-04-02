@@ -18,7 +18,7 @@ class Scanner():
         self.studio = Studio()
         self.z_default = 24200
         self.filterCube = '5-TX2' # '5-TX2'
-        self.pl_json = 'position_list_whole5x.json'
+        self.pl_json = 'position_list_whole5x_new.json'
         self.s_shaped_scan = False
         self.filter_name = {'green':'3-L5',
                             'cy3':'5-TX2',
@@ -239,6 +239,10 @@ class Scanner():
             stepsize = 0.9 * 2048 * 0.64
         elif self.magnif == 20:
             stepsize = 0.9 * 2048 * 0.32
+        elif self.magnif == 40:
+            stepsize = 0.9 * 2048 * 0.16
+        else:
+            stepsize = None
         # calculate position list
         self.position_list_json = {}
 
@@ -417,6 +421,11 @@ class Scanner():
         elif self.magnif == 20:
         # 10% overlap, 2048*2048 image, 0.32 pixelsize@20X objective
             stepsize = 0.9 * 2048 * 0.32
+        elif self.magnif == 40:
+        # 10% overlap, 2048*2048 image, 0.16 pixelsize@40X objective
+            stepsize = 0.9 * 2048 * 0.16
+        else:
+            stepsize = None
         
         # calculate position list
         self.position_list_json = {}
@@ -467,6 +476,11 @@ class Scanner():
             self.core.set_property('ObjectiveTurret','Label','3-10x 0.4na')
         elif self.magnif == 20:
             self.core.set_property('ObjectiveTurret','Label','4-20x 0.7na')
+        elif self.magnif == 40:
+            self.core.set_property('ObjectiveTurret','Label','5-40x 0.75na')
+        else:
+            raise NotImplementedError
+        
         # call snap live manager
         slm = self.studio.get_snap_live_manager()
         if hasattr(self,'xystage_df'):
@@ -572,10 +586,19 @@ class Scanner():
     
     def generate_evt(self,filter_cube):
         # get exposure time information
-        with open("exposure_50um_10x.json",'r') as f:
-            exp_50um_10x = json.load(f)
+        if self.magnif == 10:
+            exposure_config = 'exposure_50um_10x.json'
+        elif self.magnif == 20:
+            exposure_config = 'exposure_50um_20x.json'
+        elif self.magnif == 40:
+            exposure_config = 'exposure_50um_40x.json'
+        else:
+            exposure_config = None
+
+        with open(exposure_config,'r') as f:
+            exp_50um = json.load(f)
         try:
-            exposure_t = exp_50um_10x[filter_cube]
+            exposure_t = exp_50um[filter_cube]
         except KeyError: # exposure setting not given
             exposure_t = 100
         print("Exposure time: ",str(exposure_t),"ms")
@@ -599,7 +622,7 @@ class Scanner():
             for tile in self.pos_z[region]:
                 evt = {
                 'axes': {'pos_x': int(tile[0]), 'pos_y': int(tile[1]), 'pos_z': int(tile[2])},
-                'exposure': exposure_t, # read from exposure_50um_10x.json
+                'exposure': exposure_t, # read from exposure_config
                 'x': tile[0],
                 'y': tile[1],
                 'z': tile[2] + focus_compensation,

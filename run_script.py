@@ -1,5 +1,5 @@
 #%% initiate scanner object
-from device_driver import Scanner
+from device_driver import *
 # only run when starting VSC, when error: micromanager was not ready yet, restart VSC
 scanner = Scanner()
 # scanner.magnif = 20 # if not stated, 10X is default (0.64um/pixel)
@@ -8,6 +8,7 @@ scanner.root = 'E:\\Username'
 scanner.animal_id = '000000'
 scanner.obj_id = 'obj1'
 scanner.createFolder()
+# scanner.focus_channel = 'cy5'
 # switch to 100% camera here
 #%% scan whole object slide with 5X objective
 scanner.scan_5x() 
@@ -41,6 +42,6 @@ scanner.roi_select_tool([90,255])
 
 scanner.get_pl_focus('cy3') # filtercube name for focus
 #%% acquire each channel
-for channel in ['cy3','green']: # 'dapi', 'green','cy3','cy5'
+for channel in ['cy3','green']: # 'dapi', 'green','cy3','cy5', 'n3'
     scanner.acq(channel)
 
