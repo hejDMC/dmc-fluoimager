@@ -1,4 +1,3 @@
-import tifffile
 import pandas as pd
 import numpy as np
 import os
@@ -8,7 +7,7 @@ import tifffile as tiff
 from skimage.exposure import rescale_intensity
 
 def get_meta(path):
-    with tifffile.TiffFile(path) as tif:
+    with tiff.TiffFile(path) as tif:
         img_meta = tif.imagej_metadata['Info']
     img_meta_list = img_meta.split('DeviceCoordinatesUm":{"')[1:]
     meta_clean = pd.DataFrame(index=['focus','x','y'])
@@ -121,7 +120,7 @@ def stitch_folder(path_to_region_folder,overlap,output_folder,new_fname,padding)
             # filling in canvas with tiles
             try:
                 stitch_canvas[int(j*2048)-d_up:int((j+1)*2048)-d_up,int(i*2048)-d_left:int((i+1)*2048)-d_left] = img
-            except:
+            except Exception:
                 print("image damaged")
     # anti-distortion
     if padding is True:
@@ -175,7 +174,7 @@ def stitch_stack(pos_list,whole_stack,overlap,stitched_path,downsampled_path,pad
             # filling in canvas with tiles
             try:
                 stitch_canvas[int(j*2048)-d_up:int((j+1)*2048)-d_up,int(i*2048)-d_left:int((i+1)*2048)-d_left] = img
-            except:
+            except Exception:
                 print("image damaged")
     # apply black margin or not
     if padding is True:
@@ -205,7 +204,7 @@ def downsample(input_tiff,output_png,size_tuple,contrast_tuple):
     # transform to 8 bit
     img_8 = (img_down >> 8).astype('uint8')
     # save downsampled image
-    tifffile.imsave(output_png,img_8)
+    tiff.imsave(output_png,img_8)
     print(output_png,' downsampled')
     print('-----')
 

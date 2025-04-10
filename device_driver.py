@@ -4,12 +4,12 @@ from pycromanager import Core
 from pycromanager import Studio
 import numpy as np
 import pandas as pd
-import tifffile
-from stitching_tools import *
+import tifffile as tiff
+from stitching_tools import map_loc
 import os
 import cv2
 import matplotlib.pyplot as plt
-from roi_tools import *
+from roi_tools import merge_roi, del_roi, sort_region
 
 
 class Scanner():
@@ -87,7 +87,7 @@ class Scanner():
         canvas_h = int(2048*h) - int(205*(h-1))
         loc_map = map_loc(w,h)
         self.stitch_canvas = np.zeros((canvas_h,canvas_w),np.uint16) # create stitched img here
-        img_stack = tifffile.imread(os.path.join(self.root,self.animal_id,'raw',self.obj_id,self.obj_id+'_meta_1',self.obj_id+'_meta_NDTiffStack.tif'))
+        img_stack = tiff.imread(os.path.join(self.root,self.animal_id,'raw',self.obj_id,self.obj_id+'_meta_1',self.obj_id+'_meta_NDTiffStack.tif'))
         tile = 0
         for j in range(h):
             for i in range(w):
@@ -107,7 +107,7 @@ class Scanner():
                 # filling in canvas with tiles
                 try:
                     self.stitch_canvas[int(j*2048)-d_up:int((j+1)*2048)-d_up,int(i*2048)-d_left:int((i+1)*2048)-d_left] = img
-                except:
+                except Exception:
                     print("image damaged")
                 tile += 1
         self.stitched_tif_path = os.path.join(self.root,self.animal_id,'raw',self.obj_id,self.obj_id+'_meta_1','stitched.tif')
@@ -129,7 +129,7 @@ class Scanner():
             if self.stitched_tif_path == os.path.join(self.root,self.animal_id,'raw',self.obj_id,self.obj_id+'_meta_1','stitched.tif'):
                 pass
         else:
-            self.stitch_canvas = tifffile.imread(os.path.join(self.root,self.animal_id,'raw',self.obj_id,self.obj_id+'_meta_1','stitched.tif'))
+            self.stitch_canvas = tiff.imread(os.path.join(self.root,self.animal_id,'raw',self.obj_id,self.obj_id+'_meta_1','stitched.tif'))
             self.stitched_tif_path = os.path.join(self.root,self.animal_id,'raw',self.obj_id,self.obj_id+'_meta_1','stitched.tif')
         # downsample by 8X
         img = cv2.resize(self.stitch_canvas,(int(self.stitch_canvas.shape[1]/8),int(self.stitch_canvas.shape[0]/8)))
@@ -146,7 +146,7 @@ class Scanner():
         # gaussian filter
         img = cv2.GaussianBlur(img,(31,31),0)
         # OTSU threshold
-        if threshold == None:
+        if threshold is None:
             _,img_bin = cv2.threshold(img,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
         else:
             _,img_bin = cv2.threshold(img, threshold[0], threshold[1], cv2.THRESH_BINARY)
@@ -204,7 +204,7 @@ class Scanner():
             df_regions['region_'+str(region)] = self.regions[region]
 
         df_regions.to_csv(os.path.join(self.root,self.animal_id,'raw',self.obj_id,self.obj_id+'_meta_1','stitched_regions.csv'),index=0)
-        tifffile.imwrite(os.path.join(self.root,self.animal_id,'raw',self.obj_id,self.obj_id+'_meta_1','stitched_regions.tif'),img_color)
+        tiff.imwrite(os.path.join(self.root,self.animal_id,'raw',self.obj_id,self.obj_id+'_meta_1','stitched_regions.tif'),img_color)
         print('Mapping to XYStage')
         x_stage,y_stage = 1222,0
         k = -1.28
@@ -222,8 +222,8 @@ class Scanner():
             y = y * k + b_y
             w,h = w*(-k), h*(-k)
             # save boundary xystage coordinates
-            l,r,u,d = (x,y-0.5*h),(x-w,y-0.5*h),(x-0.5*w,y),(x-0.5*w,y-h)
-            save_to_df_raw = [l[0],l[1],r[0],r[1],u[0],u[1],d[0],d[1]]
+            L,r,u,d = (x,y-0.5*h),(x-w,y-0.5*h),(x-0.5*w,y),(x-0.5*w,y-h)
+            save_to_df_raw = [L[0],L[1],r[0],r[1],u[0],u[1],d[0],d[1]]
             save_to_df = []
             # keep inside motor range
             for coord in save_to_df_raw:
@@ -289,10 +289,10 @@ class Scanner():
             if self.stitched_tif_path == os.path.join(self.root,self.animal_id,'raw',self.obj_id,self.obj_id+'_meta_1','stitched.tif'):
                 pass
             else:
-                self.stitch_canvas = tifffile.imread(os.path.join(self.root,self.animal_id,'raw',self.obj_id,self.obj_id+'_meta_1','stitched.tif'))
+                self.stitch_canvas = tiff.imread(os.path.join(self.root,self.animal_id,'raw',self.obj_id,self.obj_id+'_meta_1','stitched.tif'))
                 self.stitched_tif_path = os.path.join(self.root,self.animal_id,'raw',self.obj_id,self.obj_id+'_meta_1','stitched.tif')
         else:
-            self.stitch_canvas = tifffile.imread(os.path.join(self.root,self.animal_id,'raw',self.obj_id,self.obj_id+'_meta_1','stitched.tif'))
+            self.stitch_canvas = tiff.imread(os.path.join(self.root,self.animal_id,'raw',self.obj_id,self.obj_id+'_meta_1','stitched.tif'))
             self.stitched_tif_path = os.path.join(self.root,self.animal_id,'raw',self.obj_id,self.obj_id+'_meta_1','stitched.tif')
         # downsample by 8X
         img = cv2.resize(self.stitch_canvas,(int(self.stitch_canvas.shape[1]/8),int(self.stitch_canvas.shape[0]/8)))
@@ -379,7 +379,7 @@ class Scanner():
         plt.imshow(img_color)
 
         df_regions.to_csv(os.path.join(self.root,self.animal_id,'raw',self.obj_id,self.obj_id+'_meta_1','stitched_regions.csv'),index=0)
-        tifffile.imwrite(os.path.join(self.root,self.animal_id,'raw',self.obj_id,self.obj_id+'_meta_1','stitched_regions.tif'),img_color)
+        tiff.imwrite(os.path.join(self.root,self.animal_id,'raw',self.obj_id,self.obj_id+'_meta_1','stitched_regions.tif'),img_color)
         # map region coords to xystage
         print('Mapping to XYStage')
         # no need to change if used whole5x json as position list
@@ -400,8 +400,8 @@ class Scanner():
             y = y * k + b_y
             w,h = w*(-k), h*(-k)
             # save boundary xystage coordinates
-            l,r,u,d = (x,y-0.5*h),(x-w,y-0.5*h),(x-0.5*w,y),(x-0.5*w,y-h)
-            save_to_df_raw = [l[0],l[1],r[0],r[1],u[0],u[1],d[0],d[1]]
+            L,r,u,d = (x,y-0.5*h),(x-w,y-0.5*h),(x-0.5*w,y),(x-0.5*w,y-h)
+            save_to_df_raw = [L[0],L[1],r[0],r[1],u[0],u[1],d[0],d[1]]
             save_to_df = []
             # keep inside motor range
             for coord in save_to_df_raw:

@@ -1,0 +1,17 @@
+[project]
+name = "dmc_fluoimager"
+version = "0.0.1"
+description = "DMC-FluoImager is a Python project that automates whole slide image acquisition on microscope camera."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "matplotlib>=3.10.1",
+    "natsort>=8.4.0",
+    "opencv-python>=4.11.0.86",
+    "pandas>=2.2.3",
+    "pycromanager>=1.0.2",
+    "ruff>=0.11.4",
+    "scikit-image>=0.25.2",
+    "tifffile>=2025.3.30",
+]
+
